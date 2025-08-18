@@ -1,10 +1,8 @@
 package download
 
 import (
-	"fmt"
+	"log/slog"
 	"net/url"
-
-	"os"
 
 	"github.com/ananthvk/godown/internal/download/storage"
 	"github.com/ananthvk/godown/internal/download/task"
@@ -15,7 +13,7 @@ type Downloader struct {
 
 func (d *Downloader) Download(urlString string) {
 	if !IsUrl(urlString) {
-		fmt.Fprintf(os.Stderr, "Invalid URL %q\n", urlString)
+		slog.Error("invalid url", "url", urlString)
 		return
 	}
 	url, _ := url.Parse(urlString)
@@ -25,7 +23,7 @@ func (d *Downloader) Download(urlString string) {
 	case "http", "https":
 		t = &task.HTTPDownloadTask{Url: urlString, WriterFactory: &storage.FSWriterFactory{}}
 	default:
-		fmt.Fprintf(os.Stderr, "URL scheme '%s' not supported\n", url.Scheme)
+		slog.Error("unsupported url scheme", "scheme", url.Scheme)
 		return
 	}
 	t.Execute()
