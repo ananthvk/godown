@@ -5,10 +5,13 @@ import (
 	"io"
 	"net/http"
 	"os"
+
+	"github.com/ananthvk/godown/internal/download/storage"
 )
 
 type HTTPDownloadTask struct {
-	Url string
+	Url           string
+	WriterFactory storage.WriterFactory
 }
 
 func (h *HTTPDownloadTask) Execute() {
@@ -19,9 +22,19 @@ func (h *HTTPDownloadTask) Execute() {
 		return
 	}
 	defer resp.Body.Close()
-	b, err := io.Copy(os.Stdout, resp.Body)
+	v := resp.Header["Content-Disposition"]
+	fmt.Println(v[0])
+
+	dest, err := h.WriterFactory.CreateStream("file.pdf")
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error while downloading %q: %v\n", h.Url, err)
+		return
+	}
+	defer dest.Close()
+
+	b, err := io.Copy(dest, resp.Body)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error while saving %q: %v\n", h.Url, err)
 		return
 	}
 	fmt.Printf("\n%d bytes received\n", b)

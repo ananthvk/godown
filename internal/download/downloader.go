@@ -6,6 +6,7 @@ import (
 
 	"os"
 
+	"github.com/ananthvk/godown/internal/download/storage"
 	"github.com/ananthvk/godown/internal/download/task"
 )
 
@@ -22,7 +23,7 @@ func (d *Downloader) Download(urlString string) {
 
 	switch url.Scheme {
 	case "http", "https":
-		t = &task.HTTPDownloadTask{Url: urlString}
+		t = &task.HTTPDownloadTask{Url: urlString, WriterFactory: &storage.FSWriterFactory{}}
 	default:
 		fmt.Fprintf(os.Stderr, "URL scheme '%s' not supported\n", url.Scheme)
 		return
