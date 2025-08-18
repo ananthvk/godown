@@ -15,14 +15,27 @@ func main() {
 		Description: "godown is a concurrent file downloader",
 		Version:     "0.0.1",
 		ArgsUsage:   "<url>",
+		Flags: []cli.Flag{
+			&cli.StringFlag{
+				Name:  "output-dir",
+				Value: ".",
+				Usage: "directory to save files to",
+			},
+			&cli.BoolFlag{
+				Name:  "ignore-invalid-url",
+				Value: false,
+				Usage: "ignores invalid urls that are passed as input, if the input url is missing a scheme, automatically prepends http://",
+			},
+		},
 		Action: func(ctx context.Context, cmd *cli.Command) error {
 			if cmd.Args().Len() == 0 {
 				return cli.Exit("no urls specified", 1)
 			}
-			downloader := download.NewDownloader()
+			downloader := download.NewDownloader(cmd.String("output-dir"), cmd.Bool("ignore-invalid-url"))
 			for _, url := range cmd.Args().Slice() {
-				downloader.Download(url)
+				downloader.Download(ctx, url)
 			}
+
 			slog.Info("waiting for all downloads to complete")
 			downloader.Wait()
 			slog.Info("completed all downloads")

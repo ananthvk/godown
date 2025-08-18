@@ -1,6 +1,7 @@
 package task
 
 import (
+	"context"
 	"io"
 	"log/slog"
 	"mime"
@@ -18,7 +19,7 @@ type HTTPDownloadTask struct {
 	WriterFactory storage.WriterFactory
 }
 
-func (h *HTTPDownloadTask) Execute() {
+func (h *HTTPDownloadTask) Execute(ctx context.Context) {
 	slog.Info("starting download", slog.String("url", h.Url))
 	resp, err := http.Get(h.Url)
 	if err != nil {
