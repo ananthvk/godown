@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"log/slog"
 	"os"
 
 	"github.com/ananthvk/godown/internal/download"
@@ -18,8 +19,13 @@ func main() {
 			if cmd.Args().Len() == 0 {
 				return cli.Exit("no urls specified", 1)
 			}
-			downloader := &download.Downloader{}
-			downloader.Download(cmd.Args().First())
+			downloader := download.NewDownloader()
+			for _, url := range cmd.Args().Slice() {
+				downloader.Download(url)
+			}
+			slog.Info("waiting for all downloads to complete")
+			downloader.Wait()
+			slog.Info("completed all downloads")
 			return nil
 		},
 	})

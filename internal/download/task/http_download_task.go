@@ -28,9 +28,9 @@ func (h *HTTPDownloadTask) Execute() {
 	defer resp.Body.Close()
 
 	if resp.StatusCode >= 200 && resp.StatusCode <= 299 {
-		slog.Info("http request sent", "status", resp.Status)
+		slog.Info("http request sent", "status", resp.Status, "url", h.Url)
 	} else {
-		slog.Error("http request sent", "status", resp.Status)
+		slog.Error("http request sent", "status", resp.Status, "url", h.Url)
 		return
 	}
 
