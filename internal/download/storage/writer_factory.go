@@ -3,5 +3,5 @@ package storage
 import "io"
 
 type WriterFactory interface {
-	CreateStream(fileName string) (io.WriteCloser, error)
+	CreateStream(fileName string) (string, io.WriteCloser, error)
 }

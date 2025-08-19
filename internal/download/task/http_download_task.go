@@ -37,7 +37,7 @@ func (h *HTTPDownloadTask) Execute(ctx context.Context) {
 
 	fileName := getFileName(resp)
 
-	dest, err := h.WriterFactory.CreateStream(fileName)
+	fileName, dest, err := h.WriterFactory.CreateStream(fileName)
 	if err != nil {
 		slog.Error("failed to create write stream", "url", h.Url, "filename", fileName, "err", err)
 		return
