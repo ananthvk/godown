@@ -4,6 +4,8 @@ import (
 	"context"
 	"log/slog"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/ananthvk/godown/internal/download"
 	"github.com/urfave/cli/v3"
@@ -32,6 +34,10 @@ func main() {
 				return cli.Exit("no urls specified", 1)
 			}
 			downloader := download.NewDownloader(cmd.String("output-dir"), cmd.Bool("ignore-invalid-url"))
+
+			ctx, cancel := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM)
+			defer cancel()
+
 			for _, url := range cmd.Args().Slice() {
 				downloader.Download(ctx, url)
 			}

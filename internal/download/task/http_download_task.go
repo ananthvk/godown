@@ -32,7 +32,11 @@ type HTTPDownloadTask struct {
 // response header or the URL.
 func (h *HTTPDownloadTask) Execute(ctx context.Context) {
 	slog.Info("starting download", slog.String("url", h.Url))
-	resp, err := http.Get(h.Url)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, h.Url, nil)
+	if err != nil {
+		slog.Error("creating request", slog.String("url", h.Url), "err", err)
+	}
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		slog.Error("starting download", slog.String("url", h.Url), "err", err)
 		return

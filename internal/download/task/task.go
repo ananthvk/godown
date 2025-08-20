@@ -1,6 +1,8 @@
 package task
 
-import "context"
+import (
+	"context"
+)
 
 // Task represents a work unit that downloads content from the server or other location
 // Implementations can either be written in Go as internal functions or can call external CLI tools as required
