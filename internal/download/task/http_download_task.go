@@ -12,13 +12,24 @@ import (
 	"github.com/ananthvk/godown/internal/download/storage"
 )
 
+// This is the default file name of the download when no file is detected from either the URL
+// or from the header
 const defaultFileName = "download"
 
+// HTTPDownloadTask Implements Task and represents a HTTP(S) download
+// Url is the resource to be fetched; WriterFactory creates WriterCloser streams
+// to be used by the task to save the response to some location
 type HTTPDownloadTask struct {
 	Url           string
 	WriterFactory storage.WriterFactory
 }
 
+// Execute performs a HTTP GET request for the task's url and saves the response to the location.
+// The URL is assumed to be valid.
+// The passed context is used for cancelling the task if required.
+// If the server returns with a status code < 200 or >= 300, the download is aborted.
+// WriterFactory is used to create a WriteCloser stream to save the response to, and the filename is determined from the
+// response header or the URL.
 func (h *HTTPDownloadTask) Execute(ctx context.Context) {
 	slog.Info("starting download", slog.String("url", h.Url))
 	resp, err := http.Get(h.Url)
@@ -52,6 +63,9 @@ func (h *HTTPDownloadTask) Execute(ctx context.Context) {
 	slog.Info("finished download", "url", h.Url, "filename", fileName, "bytes", b)
 }
 
+// getFileName returns the filename from the response
+// It first checks the Content-Disposition header;
+// if it's missing or invalid, it attempts to infer the filename from the URL
 func getFileName(resp *http.Response) string {
 	fileName := getFileNameFromHeader(resp)
 	if fileName == "" {
@@ -63,6 +77,8 @@ func getFileName(resp *http.Response) string {
 	return fileName
 }
 
+// getFileNameFromHeader returns the filename from the Content-Disposition header of the response.
+// If the header is missing or invalid, or does not contain a "filename" key, an empty string is returned
 func getFileNameFromHeader(resp *http.Response) string {
 	contentDisposition := resp.Header.Get("Content-Disposition")
 	if contentDisposition == "" {
@@ -78,6 +94,10 @@ func getFileNameFromHeader(resp *http.Response) string {
 	return ""
 }
 
+// getFileNameFromURL returns the filename from the base (or last segment of the URL).
+// If the last segment is empty or is a slash "/", defaultFileName is used as the filename.
+// If the filename does not have an extension, it attempts to identify the file extension
+// from the Content-Type header
 func getFileNameFromURL(resp *http.Response) string {
 	u := resp.Request.URL
 	fileName := path.Base(u.Path)
@@ -85,7 +105,6 @@ func getFileNameFromURL(resp *http.Response) string {
 		fileName = defaultFileName
 	}
 
-	// If the file name does not have an extension, try to get the extension from the Content-Type header
 	if filepath.Ext(fileName) == "" {
 		fileName += getFileExt(resp)
 	}
@@ -93,6 +112,8 @@ func getFileNameFromURL(resp *http.Response) string {
 	return fileName
 }
 
+// getFileExt returns a file extension based on the Content-Type header of the response.
+// If the header does not exist, or there is any error, an empty string is returned.
 func getFileExt(resp *http.Response) string {
 	contentType := resp.Header.Get("Content-Type")
 	if contentType == "" {
