@@ -14,6 +14,7 @@ type ProgressBarFactory interface {
 type ProgressBar interface {
 	ProxyReader(r io.Reader) io.ReadCloser
 	SetTotal(total int64, complete bool)
+	Abort(drop bool)
 }
 
 type MpbProgressBar struct {

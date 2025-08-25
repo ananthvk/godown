@@ -38,7 +38,9 @@ func (h *HTTPDownloadTask) Execute(ctx context.Context) {
 	if err != nil {
 		slog.Error("creating request", slog.String("url", h.Url), "err", err)
 	}
-	resp, err := http.DefaultClient.Do(req)
+	// TODO: Set a timeout
+	client := &http.Client{}
+	resp, err := client.Do(req)
 	if err != nil {
 		slog.Error("starting download", slog.String("url", h.Url), "err", err)
 		return
@@ -69,20 +71,22 @@ func (h *HTTPDownloadTask) Execute(ctx context.Context) {
 	}
 
 	bar := h.ProgressBarFactory.CreateProgressBar(total, "Download "+fileName)
-	// Always complete the bar on exit, even on error or interruption
-	defer bar.SetTotal(-1, true)
 
 	r := bar.ProxyReader(resp.Body)
 	if r == nil {
 		slog.Error("failed to create progress bar proxy reader", "url", h.Url, "filename", fileName, "err", err)
 		r = resp.Body
 	}
-	defer r.Close()
 
 	b, err := io.Copy(dest, r)
 	if err != nil {
 		slog.Error("failed to save response", "url", h.Url, "filename", fileName, "err", err)
+		bar.Abort(true)
 		return
+	}
+
+	if total == 0 {
+		bar.SetTotal(-1, true)
 	}
 
 	slog.Info("finished download", "url", h.Url, "filename", fileName, "bytes", b)
