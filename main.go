@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"io"
 	"log/slog"
 	"os"
 	"os/signal"
@@ -9,6 +10,8 @@ import (
 
 	"github.com/ananthvk/godown/internal/download"
 	"github.com/urfave/cli/v3"
+	// "github.com/vbauerster/mpb/v8"
+	// "github.com/vbauerster/mpb/v8/decor"
 )
 
 func main() {
@@ -28,11 +31,21 @@ func main() {
 				Value: false,
 				Usage: "ignores invalid urls that are passed as input, if the input url is missing a scheme, automatically prepends http://",
 			},
+			&cli.BoolFlag{
+				Name:  "log",
+				Value: false,
+				Usage: "Enables logging",
+			},
 		},
 		Action: func(ctx context.Context, cmd *cli.Command) error {
 			if cmd.Args().Len() == 0 {
 				return cli.Exit("no urls specified", 1)
 			}
+
+			if !cmd.Bool("log") {
+				slog.SetDefault(slog.New(slog.NewTextHandler(io.Discard, nil)))
+			}
+
 			downloader := download.NewDownloader(cmd.String("output-dir"), cmd.Bool("ignore-invalid-url"))
 
 			ctx, cancel := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM)

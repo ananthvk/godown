@@ -48,7 +48,9 @@ func (f *FSWriterFactory) CreateStream(fileName string) (string, io.WriteCloser,
 			return "", nil, err
 		}
 		if !exists {
-			fileName = fileNameNew
+			if fileNameNew != "" {
+				fileName = fileNameNew
+			}
 			break
 		}
 		// TODO: Optimization: Store the filename along with the counter in a map so that the next time the free file name can be

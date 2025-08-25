@@ -60,7 +60,6 @@ func (d *Downloader) Download(ctx context.Context, urlString string) {
 	go func() {
 		t.Execute(ctx)
 		defer d.wg.Done()
-
 	}()
 }
 
