@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"sync"
 
+	"github.com/ananthvk/godown/internal/download/reporter"
 	"github.com/ananthvk/godown/internal/download/storage"
 	"github.com/ananthvk/godown/internal/download/task"
 )
@@ -18,15 +19,17 @@ type Downloader struct {
 	writerFactory    storage.WriterFactory
 	wg               sync.WaitGroup
 	ignoreInvalidURL bool
+	progressBar      reporter.ProgressBarFactory
 }
 
 // NewDownloader creates and returns a pointer to a Downloader object.
 // It sets the WriterFactory to the default FSWriterFactory with the given basePath
 // The ignoreInvalidURL flag determines whether invalid URLs are skipped or treated as errors
-func NewDownloader(basePath string, ignoreInvalidURL bool) *Downloader {
+func NewDownloader(basePath string, ignoreInvalidURL bool, progressBarFactory reporter.ProgressBarFactory) *Downloader {
 	downloader := Downloader{}
 	downloader.writerFactory = &storage.FSWriterFactory{BasePath: basePath}
 	downloader.ignoreInvalidURL = ignoreInvalidURL
+	downloader.progressBar = progressBarFactory
 	return &downloader
 }
 
@@ -45,11 +48,11 @@ func (d *Downloader) Download(ctx context.Context, urlString string) {
 
 	switch url.Scheme {
 	case "http", "https":
-		t = &task.HTTPDownloadTask{Url: urlString, WriterFactory: d.writerFactory}
+		t = &task.HTTPDownloadTask{Url: urlString, WriterFactory: d.writerFactory, ProgressBarFactory: d.progressBar}
 	default:
 		if d.ignoreInvalidURL && url.Scheme == "" {
 			// If the url is invalid because it lacks a URL scheme, try adding a default http:// scheme
-			t = &task.HTTPDownloadTask{Url: "http://" + urlString, WriterFactory: d.writerFactory}
+			t = &task.HTTPDownloadTask{Url: "http://" + urlString, WriterFactory: d.writerFactory, ProgressBarFactory: d.progressBar}
 		} else {
 			slog.Error("unsupported url scheme", "scheme", url.Scheme)
 			return

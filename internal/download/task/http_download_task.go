@@ -9,6 +9,7 @@ import (
 	"path"
 	"path/filepath"
 
+	"github.com/ananthvk/godown/internal/download/reporter"
 	"github.com/ananthvk/godown/internal/download/storage"
 )
 
@@ -20,8 +21,9 @@ const defaultFileName = "download"
 // Url is the resource to be fetched; WriterFactory creates WriterCloser streams
 // to be used by the task to save the response to some location
 type HTTPDownloadTask struct {
-	Url           string
-	WriterFactory storage.WriterFactory
+	Url                string
+	WriterFactory      storage.WriterFactory
+	ProgressBarFactory reporter.ProgressBarFactory
 }
 
 // Execute performs a HTTP GET request for the task's url and saves the response to the location.
@@ -57,13 +59,39 @@ func (h *HTTPDownloadTask) Execute(ctx context.Context) {
 		slog.Error("failed to create write stream", "url", h.Url, "filename", fileName, "err", err)
 		return
 	}
-	defer dest.Close()
 
-	b, err := io.Copy(dest, resp.Body)
+	total := resp.ContentLength
+	if total <= 0 {
+		total = 0
+		slog.Info("content length header not found", "url", h.Url, "length", resp.ContentLength)
+	} else {
+		slog.Info("content length header found", "url", h.Url, "length", resp.ContentLength)
+	}
+
+	bar := h.ProgressBarFactory.CreateProgressBar(total, "Download "+fileName)
+
+	r := bar.ProxyReader(resp.Body)
+
+	if r == nil {
+		slog.Error("failed to create progress bar proxy reader", "url", h.Url, "filename", fileName, "err", err)
+		r = resp.Body
+	}
+
+	defer r.Close()
+
+	b, err := io.Copy(dest, r)
 	if err != nil {
 		slog.Error("failed to save response", "url", h.Url, "filename", fileName, "err", err)
+		if total == 0 {
+			bar.SetTotal(-1, true)
+		}
 		return
 	}
+
+	if total == 0 {
+		bar.SetTotal(-1, true)
+	}
+
 	slog.Info("finished download", "url", h.Url, "filename", fileName, "bytes", b)
 }
 
