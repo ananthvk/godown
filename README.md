@@ -23,3 +23,10 @@ GLOBAL OPTIONS:
    --help, -h            show help
    --version, -v         print the version
 ```
+
+## BUGS / TODO
+
+- [ ] Progress bar gets stuck when the server closes unexpectedly
+- [ ] Handle prealloacation of disk space
+- [ ] Number of retries
+- [ ] Handle timeout
