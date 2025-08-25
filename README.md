@@ -19,6 +19,7 @@ DESCRIPTION:
 GLOBAL OPTIONS:
    --output-dir string   directory to save files to (default: ".")
    --ignore-invalid-url  ignores invalid urls that are passed as input, if the input url is missing a scheme, automatically prepends http:// (default: false)
+   --log                 Enables logging (default: false)
    --help, -h            show help
    --version, -v         print the version
 ```
